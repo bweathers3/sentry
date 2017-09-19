@@ -1,62 +1,30 @@
-import jQuery from 'jquery';
-import PropTypes from 'prop-types';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import FormField from './formField';
+import Input from './input';
 
-export default class InputField extends FormField {
+export default class InputField extends React.Component {
   static propTypes = {
-    ...FormField.propTypes,
-    placeholder: PropTypes.string
+    ...FormField.propTypes
   };
 
-  // XXX(dcramer): this comes from TooltipMixin
-  componentDidMount() {
-    super.componentDidMount();
-    this.attachTooltips();
-  }
+  onChange = (onChange, e) => {
+    onChange(e.target.value, e);
+  };
 
-  componentWillUnmount() {
-    this.removeTooltips();
-    jQuery(ReactDOM.findDOMNode(this)).unbind();
-    super.componentWillUnmount();
-  }
-
-  attachTooltips() {
-    jQuery('.tip', ReactDOM.findDOMNode(this)).tooltip();
-  }
-
-  removeTooltips() {
-    jQuery('.tip', ReactDOM.findDOMNode(this)).tooltip('destroy');
-  }
-
-  getAttributes() {
-    return {};
-  }
-
-  getField() {
+  render() {
+    let {inputStyle, inputClassName, ...otherProps} = this.props;
     return (
-      <input
-        id={this.getId()}
-        type={this.getType()}
-        className="form-control"
-        placeholder={this.props.placeholder}
-        onChange={this.onChange}
-        disabled={this.props.disabled}
-        ref="input"
-        required={this.props.required}
-        value={this.state.value}
-        style={this.props.inputStyle}
-        {...this.getAttributes()}
-      />
+      <FormField {...this.props}>
+        {({onChange, ...formFieldProps}) => (
+          <Input
+            style={inputStyle}
+            {...otherProps}
+            className={inputClassName}
+            onChange={this.onChange.bind(this, onChange)}
+            {...formFieldProps}
+          />
+        )}
+      </FormField>
     );
-  }
-
-  getClassName() {
-    return 'control-group';
-  }
-
-  getType() {
-    throw new Error('Must be implemented by child.');
   }
 }

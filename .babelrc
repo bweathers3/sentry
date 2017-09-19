@@ -15,6 +15,7 @@
     "emotion",
     "transform-class-properties",
     "transform-object-rest-spread",
+    "transform-decorators-legacy",
     "lodash",
     "syntax-dynamic-import",
     "react-hot-loader/babel",
@@ -39,7 +40,9 @@
         "emotion",
         "transform-class-properties",
         "transform-object-rest-spread",
+        "transform-decorators-legacy",
         "dynamic-import-node",
+        "syntax-dynamic-import",
         [
           "babel-plugin-transform-builtin-extend",
           {

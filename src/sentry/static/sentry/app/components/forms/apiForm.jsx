@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
+import React from 'react';
 
 import {Client} from '../../api';
 import IndicatorStore from '../../stores/indicatorStore';
 import Form from './form';
-import FormState from './state';
 import {t} from '../../locale';
 
-export default class ApiForm extends Form {
+export default class ApiForm extends React.Component {
   static propTypes = {
     ...Form.propTypes,
     onSubmit: PropTypes.func,
@@ -23,35 +23,27 @@ export default class ApiForm extends Form {
     this.api.clear();
   }
 
-  onSubmit = e => {
-    e.preventDefault();
-
-    if (this.state.state == FormState.SAVING) {
-      return;
-    }
-
-    let {data} = this.state;
-
+  onSubmit = (data, onSuccess, onError) => {
     this.props.onSubmit && this.props.onSubmit(data);
-    this.setState(
-      {
-        state: FormState.SAVING
+    let loadingIndicator = IndicatorStore.add(t('Saving changes..'));
+    this.api.request(this.props.apiEndpoint, {
+      method: this.props.apiMethod,
+      data,
+      success: result => {
+        IndicatorStore.remove(loadingIndicator);
+        onSuccess(result);
       },
-      () => {
-        let loadingIndicator = IndicatorStore.add(t('Saving changes..'));
-        this.api.request(this.props.apiEndpoint, {
-          method: this.props.apiMethod,
-          data,
-          success: result => {
-            IndicatorStore.remove(loadingIndicator);
-            this.onSubmitSuccess(result);
-          },
-          error: error => {
-            IndicatorStore.remove(loadingIndicator);
-            this.onSubmitError(error);
-          }
-        });
+      error: error => {
+        IndicatorStore.remove(loadingIndicator);
+        onError(error);
       }
-    );
+    });
   };
+
+  render() {
+    // eslint-disable-next-line no-unused-vars
+    let {onSubmit, apiMethod, apiEndpoint, ...otherProps} = this.props;
+
+    return <Form onSubmit={this.onSubmit} {...otherProps} />;
+  }
 }

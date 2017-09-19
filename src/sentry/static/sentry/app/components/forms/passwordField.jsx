@@ -5,7 +5,7 @@ import FormState from './state';
 
 // TODO(dcramer): im not entirely sure this is working correctly with
 // value propagation in all scenarios
-export default class PasswordField extends InputField {
+export default class PasswordField extends React.Component {
   static propTypes = {
     ...InputField.propTypes,
     hasSavedValue: PropTypes.bool,
@@ -21,7 +21,9 @@ export default class PasswordField extends InputField {
   constructor(props, context) {
     super(props, context);
 
-    this.state.editing = false;
+    this.state = {
+      editing: false
+    };
   }
 
   componentWillReceiveProps(nextProps) {
@@ -38,10 +40,6 @@ export default class PasswordField extends InputField {
     }
   }
 
-  getType() {
-    return 'password';
-  }
-
   cancelEdit = e => {
     e.preventDefault();
     this.setState(
@@ -49,9 +47,12 @@ export default class PasswordField extends InputField {
         editing: false
       },
       () => {
-        this.setValue('');
+        this.context.form.setValue(this.props.name, '');
       }
     );
+    if (this.props.onCancelEdit) {
+      this.props.onCancelEdit(e);
+    }
   };
 
   startEdit = e => {
@@ -59,18 +60,24 @@ export default class PasswordField extends InputField {
     this.setState({
       editing: true
     });
+
+    if (this.props.onStartEdit) {
+      this.props.onStartEdit(e);
+    }
   };
 
-  getField() {
-    if (!this.props.hasSavedValue) {
-      return super.getField();
+  render() {
+    let {hasSavedValue, ...otherProps} = this.props;
+
+    if (!hasSavedValue) {
+      return <InputField {...otherProps} type="password" />;
     }
 
     if (this.state.editing) {
       return (
         <div className="form-password editing">
           <div>
-            {super.getField()}
+            <InputField {...otherProps} type="password" />
           </div>
           <div>
             <a onClick={this.cancelEdit}>Cancel</a>

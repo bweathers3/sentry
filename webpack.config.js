@@ -199,7 +199,7 @@ var appConfig = {
     library: 'exports',
     sourceMapFilename: '[name].js.map'
   },
-  devtool: IS_PRODUCTION ? '#source-map' : '#cheap-source-map'
+  devtool: true ? '#source-map' : '#cheap-source-map'
 };
 
 /**
@@ -223,7 +223,7 @@ var pwConfig = {
     library: 'sentrypw',
     sourceMapFilename: '[name].js.map'
   },
-  devtool: IS_PRODUCTION ? '#source-map' : '#cheap-source-map'
+  devtool: true ? '#source-map' : '#cheap-source-map'
 };
 
 /**

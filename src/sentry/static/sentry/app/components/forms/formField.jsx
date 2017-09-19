@@ -1,11 +1,13 @@
 import classNames from 'classnames';
+import {Observer, observer} from 'mobx-react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import idx from 'idx';
+import ReactDOM from 'react-dom';
 
 import {defined} from '../../utils';
+import FormState from './state';
 
-export default class FormField extends React.PureComponent {
+@observer class FormField extends React.Component {
   static propTypes = {
     name: PropTypes.string.isRequired,
     /** Inline style */
@@ -32,28 +34,43 @@ export default class FormField extends React.PureComponent {
   };
 
   static contextTypes = {
+    saveOnBlur: PropTypes.bool,
     form: PropTypes.object
   };
 
   constructor(props, context) {
     super(props, context);
-    this.state = {
-      value: this.getValue(props, context)
-    };
+    // XXX: from merge
+    // this.state = {
+      // value: this.getValue(props, context)
+    // };
+    super(props, context);
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    // Tell model this field is required
+    // TODO?: add more validation types
+    this.context.form.setRequired(this.props.name, this.props.required);
+    // this.context.form.addField(this.props.name, {
+    // required: this.props.required,
+    // });
+  }
+
 
   componentWillReceiveProps(nextProps, nextContext) {
-    if (
-      this.props.value !== nextProps.value ||
-      (!defined(this.context.form) && defined(nextContext.form))
-    ) {
-      this.setValue(this.getValue(nextProps, nextContext));
-    }
+    // XXX merge
+    // if (
+      // this.props.value !== nextProps.value ||
+      // (!defined(this.context.form) && defined(nextContext.form))
+    // ) {
+      // this.setValue(this.getValue(nextProps, nextContext));
+    // }
   }
 
-  componentWillUnmount() {}
+  componentWillUnmount() {
+    //this.removeTooltips();
+    jQuery(ReactDOM.findDOMNode(this)).unbind();
+  }
 
   getValue(props, context) {
     let form = (context || this.context || {}).form;
@@ -67,44 +84,32 @@ export default class FormField extends React.PureComponent {
     return props.defaultValue || '';
   }
 
+  attachTooltips() {
+    jQuery('.tip', ReactDOM.findDOMNode(this)).tooltip();
+  }
+
+  removeTooltips() {
+    jQuery('.tip', ReactDOM.findDOMNode(this)).tooltip('destroy');
+  }
+
   getError(props, context) {
-    let form = (context || this.context || {}).form;
-    props = props || this.props;
-    if (defined(props.error)) {
-      return props.error;
-    }
-    return idx(form, _ => _.errors[props.name]) || null;
+    return this.context.form.getError(this.props.name);
   }
 
   getId() {
     return `id-${this.props.name}`;
   }
 
-  coerceValue(value) {
-    return value;
-  }
-
-  onChange = e => {
-    let value = e.target.value;
-    this.setValue(value);
-  };
-
   setValue = value => {
-    let form = (this.context || {}).form;
-    this.setState(
-      {
-        value
-      },
-      () => {
-        this.props.onChange && this.props.onChange(this.coerceValue(this.state.value));
-        form && form.onFieldChange(this.props.name, this.coerceValue(this.state.value));
-      }
-    );
+    this.context.form.setValue(this.props.name, value);
+    this.props.onChange && this.props.onChange(value);
   };
 
-  getField() {
-    throw new Error('Must be implemented by child.');
-  }
+  handleBlur = e => {
+    if (!this.context.saveOnBlur) return;
+
+    this.context.form.saveField(this.props.name, e.currentTarget.value);
+  };
 
   render() {
     let {
@@ -123,15 +128,48 @@ export default class FormField extends React.PureComponent {
       required
     });
     let shouldShowErrorMessage = error && !hideErrorMessage;
+    let id = this.getId();
+    let model = this.context.form;
 
     return (
       <div style={style} className={cx}>
         <div className="controls">
           {label &&
-            <label htmlFor={this.getId()} className="control-label">
+            <label htmlFor={id} className="control-label">
               {label}
             </label>}
-          {this.getField()}
+          <div>
+
+            <Observer>
+              {() => (
+                <this.props.children
+                  {...{
+                    ...this.props,
+                    id,
+                    onChange: this.setValue,
+                    onBlur: this.handleBlur,
+                    value: model.getValue(this.props.name)
+                  }}
+                />
+              )}
+            </Observer>
+
+            <Observer>
+              {() => {
+                if (model.getFieldState(this.props.name) === FormState.SAVING) {
+                  return <span>Saving</span>;
+                }
+
+                if (model.getFieldState(this.props.name) === FormState.READY) {
+                  return <span>Saved!</span>;
+                }
+
+                return null;
+              }}
+            </Observer>
+
+          </div>
+
           {disabled &&
             disabledReason &&
             <span className="disabled-indicator tip" title={disabledReason}>
@@ -144,3 +182,5 @@ export default class FormField extends React.PureComponent {
     );
   }
 }
+
+export default FormField;
