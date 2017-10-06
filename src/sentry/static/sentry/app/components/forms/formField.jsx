@@ -123,7 +123,7 @@ import FormState from './state';
       style
     } = this.props;
     let error = this.getError();
-    let cx = classNames(className, this.getClassName(), {
+    let cx = classNames(className, {
       'has-error': !!error,
       required
     });
