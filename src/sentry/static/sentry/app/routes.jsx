@@ -123,6 +123,7 @@ const orgSettingsRoutes = [
     path="audit-log/"
     component={errorHandler(OrganizationAuditLog)}
   />,
+  <Route key="auth" path="auth/" component={errorHandler(OrganizationAuthView)} />,
   <Route
     key="integrations"
     path="integrations/"
