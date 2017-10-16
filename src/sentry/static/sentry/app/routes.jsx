@@ -110,38 +110,66 @@ function appendTrailingSlash(nextState, replaceState) {
 
 const orgSettingsRoutes = [
   <Route
+    key="settings"
+    path="settings/"
+    name="General"
+    component={errorHandler(OrganizationSettings)}
+  />,
+
+  <Route
     key="api-keys"
     path="api-keys/"
+    name="API Key"
     component={errorHandler(OrganizationApiKeysView)}
   />,
+
   <Route
     key="api-keys-detail"
     path="api-keys/:apiKey/"
     component={errorHandler(OrganizationApiKeyDetailsView)}
   />,
+
   <Route
     key="audit-log"
     path="audit-log/"
+    name="Audit Log"
     component={errorHandler(OrganizationAuditLog)}
   />,
-  <Route key="auth" path="auth/" component={errorHandler(OrganizationAuthView)} />,
+
+  <Route
+    key="auth"
+    path="auth/"
+    name="Auth Providers"
+    component={errorHandler(OrganizationAuthView)}
+  />,
+
   <Route
     key="integrations"
     path="integrations/"
+    name="Integrations"
     component={errorHandler(OrganizationIntegrations)}
   />,
+
   <Route
     key="members"
     path="members/"
+    name="Members"
     component={errorHandler(OrganizationMembersView)}
   />,
+
   <Route
     key="rate-limits"
     path="rate-limits/"
+    name="Rate Limits"
     component={errorHandler(OrganizationRateLimits)}
   />,
-  <Route key="repos" path="repos/" component={errorHandler(OrganizationRepositories)} />,
-  <Route key="settings" path="settings/" component={errorHandler(OrganizationSettings)} />
+
+  <Route
+    key="repos"
+    path="repos/"
+    name="Repositories"
+    component={errorHandler(OrganizationRepositories)}
+  />
 ];
 
 const projectSettingsRoutes = [
@@ -234,13 +262,15 @@ function routes() {
 
           <Route path=":orgId/" component={errorHandler(OrganizationContext)}>
 
-            <Route component={errorHandler(OrganizationSettingsLayout)}>
+            <Route
+              name="Organizations"
+              component={errorHandler(OrganizationSettingsLayout)}>
               <IndexRoute component={errorHandler(OrganizationSettings)} />
 
               {orgSettingsRoutes}
             </Route>
 
-            <Route path="project/">
+            <Route name="Projects" path="project/">
               <IndexRoute component={errorHandler(ProjectPicker)} />
               <Route path=":projectId/" component={errorHandler(ProjectSettingsLayout)}>
                 <IndexRoute component={ProjectSettings} />
