@@ -91,7 +91,8 @@ import ReleaseNewEvents from './views/releaseNewEvents';
 import ReleaseOverview from './views/releases/releaseOverview';
 import RouteNotFound from './views/routeNotFound';
 import SetCallsignsAction from './views/requiredAdminActions/setCallsigns';
-import Settings from './views/settings';
+import SettingsWrapper from './views/settings/settingsWrapper';
+import SettingsIndex from './views/settings/settingsIndex';
 import SharedGroupDetails from './views/sharedGroupDetails';
 import Stream from './views/stream';
 import TeamCreate from './views/teamCreate';
@@ -226,7 +227,8 @@ function routes() {
         />
       </Route>
 
-      <Route path="/settings/" component={errorHandler(Settings)}>
+      <Route path="/settings/" name="Settings" component={errorHandler(SettingsWrapper)}>
+        <IndexRoute component={errorHandler(SettingsIndex)} />
         <Route path="organization/">
           <IndexRoute component={errorHandler(OrganizationPicker)} />
 
