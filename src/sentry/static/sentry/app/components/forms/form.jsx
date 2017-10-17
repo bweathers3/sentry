@@ -40,8 +40,8 @@ export default class Form extends React.Component {
 
   constructor(...args) {
     super(...args);
-    this.model = FormModel.create({
-      fields: this.props.initialData
+    this.model = new FormModel({
+      initialData: this.props.initialData
     });
 
     window.test = this.model;
@@ -56,7 +56,6 @@ export default class Form extends React.Component {
 
   onSubmit = e => {
     e.preventDefault();
-    console.log(this.model.getData());
     if (this.model.isSaving) {
       return;
     }

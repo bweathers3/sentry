@@ -1,152 +1,146 @@
-import {types, applySnapshot, getSnapshot} from 'mobx-state-tree';
+import {observable, computed, action} from 'mobx';
 import _ from 'lodash';
 
 import FormState from './state';
 
-const FormModel = types
-  .model('FormStore', {
-    // initialData: types.optional(
-    // types.map(types.union(types.string, types.number, types.boolean, types.Date)),
-    // {}
-    // ),
-    fields: types.optional(
-      types.map(
-        types.union(types.null, types.string, types.number, types.boolean, types.Date)
-      ),
-      {}
-    ),
-    errors: types.optional(types.map(types.union(types.boolean, types.string)), {}),
-    required: types.optional(types.map(types.boolean), {}),
-    fieldState: types.optional(types.map(types.string), {}),
-    formState: types.optional(types.string, '')
-  })
-  .views(self => ({
-    get formChanged() {
-      return !_.isEqual(self.initialData.toJSON(), self.fields.toJSON(), true);
-    },
+class FormModel {
+  @observable fields = new Map([]);
+  @observable errors = new Map();
+  @observable required = new Map([]);
+  @observable fieldState = new Map([]);
+  @observable formState;
+  snapshots = [];
+  initialData = {};
 
-    get formData() {
-      return self.fields;
-    },
+  constructor({initialData}) {
+    this.fields.replace(initialData || {});
+    this.initialData = this.fields.toJSON() || {};
+    this.snapshots = [new Map(this.fields)];
+  }
 
-    get isSaving() {
-      return self.formState === FormState.SAVING;
-    },
+  @computed get formChanged() {
+    return !_.isEqual(this.initialData.toJSON(), this.fields.toJSON(), true);
+  }
 
-    get isError() {
-      return !!self.errors.values().find(val => !!val);
-    },
+  @computed get formData() {
+    return this.fields;
+  }
 
-    getFieldState(id) {
-      return self.fieldState.has(id) && self.fieldState.get(id);
-    },
+  @computed get isSaving() {
+    return this.formState === FormState.SAVING;
+  }
 
-    getValue(id) {
-      if (!self.fields.has(id)) {
-        return '';
-      }
+  @computed get isError() {
+    return !!Array.from(this.errors.values()).find(val => !!val);
+  }
 
-      return self.fields.get(id);
-    },
+  createSnapshot() {}
 
-    getError(id) {
-      return self.errors.has(id) && self.errors.get(id);
+  getFieldState(id) {
+    return this.fieldState.has(id) && this.fieldState.get(id);
+  }
+
+  getValue(id) {
+    if (!this.fields.has(id)) {
+      return '';
     }
-  }))
-  .actions(self => ({
-    afterCreate() {
-      self.initialData = self.fields.toJSON();
-      self.snapshots = [getSnapshot(self.fields)];
-    },
 
-    setValue(id, value) {
-      self.fields.set(id, value);
+    return this.fields.get(id);
+  }
 
-      // specifically check for empty string, 0 should be allowed
-      if (!self.isValidRequiredField(id)) {
-        self.setError(id, 'Field is required');
-      } else {
-        self.setError(id, false);
-      }
-    },
+  getError(id) {
+    return this.errors.has(id) && this.errors.get(id);
+  }
 
-    addField(id, {required}) {
-      // if (!self.fields.has(id)) {
-      // self.fields.set(id, '');
-      // }
-      self.required.set(id, required);
-    },
+  // Returns true if not required or is required and is not empty
+  isValidRequiredField(id) {
+    return !this.required.has(id) || !this.required.get(id) || this.getValue(id) !== '';
+  }
 
-    undo() {
-      // Always have initial data snapshot
-      if (self.snapshots.length < 2) return;
+  @action setValue(id, value) {
+    this.fields.set(id, value);
 
-      self.snapshots.shift();
-      applySnapshot(self.fields, self.snapshots[0]);
-    },
-
-    saveField(id, currentValue) {
-      // Don't save if field hasn't changed
-      if (
-        currentValue === self.initialData[id] ||
-        (currentValue === '' && typeof self.initialData[id] === 'undefined')
-      )
-        return;
-
-      let snapshot = getSnapshot(self.fields);
-      let newValue = self.getValue(id);
-
-      // Save field + value
-      self.setFieldState(id, FormState.SAVING);
-
-      // Pretend async req
-      setTimeout(() => {
-        self.setFieldState(id, FormState.READY);
-        self.initialData[id] = newValue;
-        self.snapshots.unshift(snapshot);
-      }, 2000);
-    },
-
-    setFieldState(id, value) {
-      self.fieldState.set(id, value);
-    },
-
-    setError(id, error) {
-      if (!!error) {
-        self.formState = FormState.ERROR;
-      } else {
-        self.formState = FormState.READY;
-      }
-
-      self.errors.set(id, error);
-    },
-
-    setRequired(id, required) {
-      self.required.set(id, required);
-    },
-
-    getData() {
-      return self.fields;
-    },
-
-    // Returns true if not required or is required and is not empty
-    isValidRequiredField(id) {
-      return !self.required.has(id) || !self.required.get(id) || self.getValue(id) !== '';
-    },
-
-    // TODO: More validations
-    validate() {},
-
-    submitSuccess(data) {
-      // update initial data
-      self.formState = FormState.READY;
-      self.initialData = data;
-    },
-
-    submitError(err) {
-      self.formState = FormState.ERROR;
-      self.formErrors = err.responseJSON;
+    // specifically check for empty string, 0 should be allowed
+    if (!this.isValidRequiredField(id)) {
+      this.setError(id, 'Field is required');
+    } else {
+      this.setError(id, false);
     }
-  }));
+  }
+
+  @action addField(id, {required}) {
+    // if (!this.fields.has(id)) {
+    // this.fields.set(id, '');
+    // }
+    this.required.set(id, required);
+  }
+
+  @action undo() {
+    // Always have initial data snapshot
+    if (this.snapshots.length < 2) return;
+
+    this.snapshots.shift();
+    this.fields.replace(this.snapshots[0]);
+  }
+
+  @action saveField(id, currentValue) {
+    // Don't save if field hasn't changed
+    if (
+      currentValue === this.initialData[id] ||
+      (currentValue === '' && typeof this.initialData[id] === 'undefined')
+    )
+      return;
+
+    // shallow clone fields
+    let snapshot = new Map(this.fields);
+    let newValue = this.getValue(id);
+
+    // Save field + value
+    this.setFieldState(id, FormState.SAVING);
+
+    // Pretend async req
+    setTimeout(() => {
+      this.setFieldState(id, FormState.READY);
+      this.initialData[id] = newValue;
+      this.snapshots.unshift(snapshot);
+    }, 2000);
+  }
+
+  @action setFieldState(id, value) {
+    this.fieldState.set(id, value);
+  }
+
+  @action setError(id, error) {
+    if (!!error) {
+      this.formState = FormState.ERROR;
+    } else {
+      this.formState = FormState.READY;
+    }
+
+    this.errors.set(id, error);
+  }
+
+  @action setRequired(id, required) {
+    this.required.set(id, required);
+  }
+
+  @action getData() {
+    return this.fields;
+  }
+
+  // TODO: More validations
+  @action validate() {}
+
+  @action submitSuccess(data) {
+    // update initial data
+    this.formState = FormState.READY;
+    this.initialData = data;
+  }
+
+  @action submitError(err) {
+    this.formState = FormState.ERROR;
+    this.formErrors = err.responseJSON;
+  }
+}
 
 export default FormModel;
