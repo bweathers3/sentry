@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from django.core.urlresolvers import reverse
 from django.db.models import F
-from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -12,7 +11,6 @@ from sentry.api.bases.organization import OrganizationEndpoint, OrganizationAuth
 from sentry.api.exceptions import ResourceDoesNotExist
 from sentry.api.serializers import serialize
 from sentry.models import AuditLogEntryEvent, AuthProvider, OrganizationMember
-from sentry.plugins.base.response import Response as PluginResponse
 from sentry.utils import db
 from sentry.utils.http import absolute_uri
 
@@ -52,20 +50,6 @@ class OrganizationAuthProviderEndpoint(OrganizationEndpoint):
         # provider configure view can either be a template or a http response
         provider = auth_provider.get_provider()
 
-        view = provider.get_configure_view()
-        response = view(request, organization, auth_provider)
-
-        if isinstance(response, HttpResponse):
-            return response
-        elif isinstance(response, PluginResponse):
-            response = response.render(
-                request, {
-                    'auth_provider': auth_provider,
-                    'organization': organization,
-                    'provider': provider,
-                }
-            )
-
         pending_links_count = OrganizationMember.objects.filter(
             organization=organization,
             flags=~getattr(OrganizationMember.flags, 'sso:linked'),
@@ -78,7 +62,6 @@ class OrganizationAuthProviderEndpoint(OrganizationEndpoint):
             'default_role': organization.default_role,
             'require_link': not auth_provider.flags.allow_unlinked,
             'provider_name': provider.name,
-            'content': serialize(response),
         }
 
         return Response(serialize(context, request.user))
