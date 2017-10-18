@@ -1,5 +1,15 @@
 export const organization = [
   {
+    path: '/settings/organization/:orgId/projects/',
+    title: 'Projects',
+    show: ({access, features}) => {}
+  },
+  {
+    path: '/settings/organization/:orgId/settings/',
+    title: 'Settings',
+    show: ({access, features}) => {}
+  },
+  {
     path: '/settings/organization/:orgId/members/',
     title: 'Members',
     show: ({access, features}) => {}
@@ -32,11 +42,6 @@ export const organization = [
   {
     path: '/settings/organization/:orgId/integrations/',
     title: 'Integrations',
-    show: ({access, features}) => {}
-  },
-  {
-    path: '/settings/organization/:orgId/settings/',
-    title: 'Settings',
     show: ({access, features}) => {}
   }
 ];

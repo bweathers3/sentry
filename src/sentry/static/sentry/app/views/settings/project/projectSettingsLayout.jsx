@@ -16,6 +16,7 @@ class ProjectSettingsLayout extends React.Component {
     return (
       <ProjectContext {...this.props.params}>
         <SettingsLayout
+          {...this.props}
           renderNavigation={() => <ProjectSettingsNavigation {...this.props} />}>
 
           {React.cloneElement(this.props.children, {

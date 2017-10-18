@@ -51,6 +51,8 @@ import OrganizationIntegrations from './views/organizationIntegrations';
 import OrganizationMembersView
   from './views/settings/organization/members/organizationMembersView';
 import OrganizationPicker from './views/settings/components/organizationPicker';
+import OrganizationProjectsView
+  from './views/settings/organization/projects/organizationProjectsView';
 import OrganizationRateLimits from './views/organizationRateLimits';
 import OrganizationRepositories from './views/organizationRepositories';
 import OrganizationSettings from './views/organizationSettings';
@@ -91,8 +93,8 @@ import ReleaseNewEvents from './views/releaseNewEvents';
 import ReleaseOverview from './views/releases/releaseOverview';
 import RouteNotFound from './views/routeNotFound';
 import SetCallsignsAction from './views/requiredAdminActions/setCallsigns';
-import SettingsWrapper from './views/settings/settingsWrapper';
 import SettingsIndex from './views/settings/settingsIndex';
+import SettingsWrapper from './views/settings/settingsWrapper';
 import SharedGroupDetails from './views/sharedGroupDetails';
 import Stream from './views/stream';
 import TeamCreate from './views/teamCreate';
@@ -114,6 +116,13 @@ const orgSettingsRoutes = [
     path="settings/"
     name="General"
     component={errorHandler(OrganizationSettings)}
+  />,
+
+  <Route
+    key="projects"
+    path="projects/"
+    name="Projects"
+    component={errorHandler(OrganizationProjectsView)}
   />,
 
   <Route
@@ -262,20 +271,21 @@ function routes() {
 
           <Route path=":orgId/" component={errorHandler(OrganizationContext)}>
 
-            <Route
-              name="Organizations"
-              component={errorHandler(OrganizationSettingsLayout)}>
-              <IndexRoute component={errorHandler(OrganizationSettings)} />
+            <Route name="Organizations">
+              <Route component={errorHandler(OrganizationSettingsLayout)}>
+                <IndexRoute component={errorHandler(OrganizationSettings)} />
 
-              {orgSettingsRoutes}
-            </Route>
-
-            <Route name="Projects" path="project/">
-              <IndexRoute component={errorHandler(ProjectPicker)} />
-              <Route path=":projectId/" component={errorHandler(ProjectSettingsLayout)}>
-                <IndexRoute component={ProjectSettings} />
-                {projectSettingsRoutes}
+                {orgSettingsRoutes}
               </Route>
+
+              <Route name="Projects" path="project/">
+                <IndexRoute component={errorHandler(ProjectPicker)} />
+                <Route path=":projectId/" component={errorHandler(ProjectSettingsLayout)}>
+                  <IndexRoute component={ProjectSettings} />
+                  {projectSettingsRoutes}
+                </Route>
+              </Route>
+
             </Route>
 
           </Route>
