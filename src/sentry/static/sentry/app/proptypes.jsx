@@ -105,6 +105,22 @@ export const Tag = PropTypes.shape({
   uniqueValues: PropTypes.number
 });
 
+export const Project = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  slug: PropTypes.string.isRequired,
+  callSign: PropTypes.string,
+  color: PropTypes.string,
+  dateCreated: PropTypes.string,
+  features: PropTypes.arrayOf(PropTypes.string),
+  firstEvent: PropTypes.string,
+  isBookmarked: PropTypes.bool,
+  isPublic: PropTypes.bool,
+  platform: PropTypes.string,
+  stats: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
+  status: PropTypes.string
+});
+
 let SentryTypes = {
   AnyModel: PropTypes.shape({
     id: PropTypes.string.isRequired
@@ -115,9 +131,7 @@ let SentryTypes = {
     id: PropTypes.string.isRequired
   }),
   Tag,
-  Project: PropTypes.shape({
-    id: PropTypes.string.isRequired
-  }),
+  Project,
   TagKey: PropTypes.shape({
     key: PropTypes.string.isRequired
   }),
