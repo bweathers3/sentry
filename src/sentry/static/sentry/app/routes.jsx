@@ -32,6 +32,8 @@ import HookStore from './stores/hookStore';
 import MyIssuesAssignedToMe from './views/myIssues/assignedToMe';
 import MyIssuesBookmarked from './views/myIssues/bookmarked';
 import MyIssuesViewed from './views/myIssues/viewed';
+import NewOrganizationGeneralSettings from
+  './views/settings/organization/general/newOrganizationGeneralSettings';
 import NewProject from './views/projectInstall/newProject';
 import OnboardingConfigure from './views/onboarding/configure/index';
 import OnboardingWizard from './views/onboarding/index';
@@ -111,13 +113,6 @@ function appendTrailingSlash(nextState, replaceState) {
 }
 
 const orgSettingsRoutes = [
-  <Route
-    key="settings"
-    path="settings/"
-    name="General"
-    component={errorHandler(OrganizationSettings)}
-  />,
-
   <Route
     key="projects"
     path="projects/"
@@ -275,6 +270,13 @@ function routes() {
               <Route component={errorHandler(OrganizationSettingsLayout)}>
                 <IndexRoute component={errorHandler(OrganizationSettings)} />
 
+                <Route
+                  key="settings"
+                  path="settings/"
+                  name="General"
+                  component={errorHandler(NewOrganizationGeneralSettings)}
+                />
+
                 {orgSettingsRoutes}
               </Route>
 
@@ -325,6 +327,13 @@ function routes() {
         <IndexRoute component={errorHandler(OrganizationDashboard)} />
 
         <Route path="/organizations/:orgId/" component={OrganizationHomeContainer}>
+          <Route
+            key="settings"
+            path="settings/"
+            name="General"
+            component={errorHandler(OrganizationSettings)}
+          />
+
           {orgSettingsRoutes}
         </Route>
 

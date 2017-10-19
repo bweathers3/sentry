@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import _ from 'lodash';
+import {Observer} from 'mobx-react';
 
-import FormState from './state';
-import {t} from '../../locale';
+import FormModel from './model';
+import {t} from '../../../locale';
 
 export default class Form extends React.Component {
   static propTypes = {
@@ -17,7 +17,11 @@ export default class Form extends React.Component {
     footerClass: PropTypes.string,
     extraButton: PropTypes.element,
     initialData: PropTypes.object,
-    requireChanges: PropTypes.bool
+    requireChanges: PropTypes.bool,
+    allowUndo: PropTypes.bool,
+    saveOnBlur: PropTypes.bool,
+    apiMethod: PropTypes.string,
+    apiEndpoint: PropTypes.string,
   };
 
   static defaultProps = {
@@ -26,94 +30,92 @@ export default class Form extends React.Component {
     submitDisabled: false,
     footerClass: 'form-actions align-right',
     className: 'form-stacked',
-    requireChanges: false
+    requireChanges: false,
+    allowUndo: false,
+    saveOnBlur: false
   };
 
   static childContextTypes = {
+    saveOnBlur: PropTypes.bool.isRequired,
     form: PropTypes.object.isRequired
   };
 
   constructor(props, context) {
     super(props, context);
-    this.state = {
-      data: {...this.props.initialData},
-      errors: {},
-      initialData: {...this.props.initialData},
-      state: FormState.READY
-    };
+    let {saveOnBlur, apiEndpoint, apiMethod, initialData} = props;
+
+    this.model = new FormModel({
+      saveOnBlur,
+      apiEndpoint,
+      apiMethod,
+      initialData,
+    });
+
+    window.test = this.model;
   }
 
   getChildContext() {
-    let {data, errors} = this.state;
     return {
-      form: {
-        data,
-        errors,
-        onFieldChange: this.onFieldChange
-      }
+      saveOnBlur: this.props.saveOnBlur,
+      form: this.model
     };
   }
 
   onSubmit = e => {
     e.preventDefault();
-    this.props.onSubmit(this.state.data, this.onSubmitSuccess, this.onSubmitError);
+    if (this.model.isSaving) {
+      return;
+    }
+
+    this.props.onSubmit(this.model.getData(), this.onSubmitSuccess, this.onSubmitError);
   };
 
   onSubmitSuccess = data => {
-    let curData = this.state.data;
-    let newData = {};
-    Object.keys(data).forEach(k => {
-      if (curData.hasOwnProperty(k)) newData[k] = data[k];
-    });
-
-    this.setState({
-      state: FormState.READY,
-      errors: {},
-      initialData: newData
-    });
+    this.model.submitSuccess(data);
     this.props.onSubmitSuccess && this.props.onSubmitSuccess(data);
   };
 
   onSubmitError = error => {
-    this.setState({
-      state: FormState.ERROR,
-      errors: error.responseJSON
-    });
+    this.model.submitError(error);
     this.props.onSubmitError && this.props.onSubmitError(error);
   };
 
-  onFieldChange = (name, value) => {
-    this.setState(state => ({
-      data: {
-        ...state.data,
-        [name]: value
-      }
-    }));
-  };
-
   render() {
-    let isSaving = this.state.state === FormState.SAVING;
-    let {initialData, data} = this.state;
+    let {isSaving} = this.model;
     let {requireChanges} = this.props;
-    let hasChanges = requireChanges
-      ? Object.keys(data).length && !_.isEqual(data, initialData)
-      : true;
     return (
       <form onSubmit={this.onSubmit} className={this.props.className}>
-        {this.state.state === FormState.ERROR &&
-          <div className="alert alert-error alert-block">
-            {t(
-              'Unable to save your changes. Please ensure all fields are valid and try again.'
-            )}
-          </div>}
+        <Observer>
+          {() => {
+            return this.model.isError
+              ? <div className="alert alert-error alert-block">
+                  {t(
+                    'Unable to save your changes. Please ensure all fields are valid and try again.'
+                  )}
+                </div>
+              : null;
+          }}
+        </Observer>
+
         {this.props.children}
+
         <div className={this.props.footerClass} style={{marginTop: 25}}>
-          <button
-            className="btn btn-primary"
-            disabled={isSaving || this.props.submitDisabled || !hasChanges}
-            type="submit">
-            {this.props.submitLabel}
-          </button>
+          <Observer>
+            {() => (
+              <button
+                className="btn btn-primary"
+                disabled={
+                  this.model.isError ||
+                    isSaving ||
+                    this.props.submitDisabled ||
+                    (requireChanges ? !this.model.formChanged : false)
+                }
+                type="submit">
+                {this.props.submitLabel}
+              </button>
+            )}
+          </Observer>
+
           {this.props.onCancel &&
             <button
               type="button"
