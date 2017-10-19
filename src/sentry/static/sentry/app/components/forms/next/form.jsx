@@ -21,7 +21,7 @@ export default class Form extends React.Component {
     allowUndo: PropTypes.bool,
     saveOnBlur: PropTypes.bool,
     apiMethod: PropTypes.string,
-    apiEndpoint: PropTypes.string,
+    apiEndpoint: PropTypes.string
   };
 
   static defaultProps = {
@@ -48,7 +48,7 @@ export default class Form extends React.Component {
       saveOnBlur,
       apiEndpoint,
       apiMethod,
-      initialData,
+      initialData
     });
 
     window.test = this.model;
@@ -82,9 +82,22 @@ export default class Form extends React.Component {
 
   render() {
     let {isSaving} = this.model;
-    let {requireChanges} = this.props;
+    let {
+      className,
+      children,
+      footerClass,
+      submitDisabled,
+      submitLabel,
+      cancelLabel,
+      onCancel,
+      extraButton,
+      requireChanges,
+      saveOnBlur
+    } = this.props;
+    let shouldShowFooter = !saveOnBlur;
+
     return (
-      <form onSubmit={this.onSubmit} className={this.props.className}>
+      <form onSubmit={this.onSubmit} className={className}>
         <Observer>
           {() => {
             return this.model.isError
@@ -97,36 +110,37 @@ export default class Form extends React.Component {
           }}
         </Observer>
 
-        {this.props.children}
+        {children}
 
-        <div className={this.props.footerClass} style={{marginTop: 25}}>
-          <Observer>
-            {() => (
+        {shouldShowFooter &&
+          <div className={footerClass} style={{marginTop: 25}}>
+            <Observer>
+              {() => (
+                <button
+                  className="btn btn-primary"
+                  disabled={
+                    this.model.isError ||
+                      isSaving ||
+                      submitDisabled ||
+                      (requireChanges ? !this.model.formChanged : false)
+                  }
+                  type="submit">
+                  {submitLabel}
+                </button>
+              )}
+            </Observer>
+
+            {onCancel &&
               <button
-                className="btn btn-primary"
-                disabled={
-                  this.model.isError ||
-                    isSaving ||
-                    this.props.submitDisabled ||
-                    (requireChanges ? !this.model.formChanged : false)
-                }
-                type="submit">
-                {this.props.submitLabel}
-              </button>
-            )}
-          </Observer>
-
-          {this.props.onCancel &&
-            <button
-              type="button"
-              className="btn btn-default"
-              disabled={isSaving}
-              onClick={this.props.onCancel}
-              style={{marginLeft: 5}}>
-              {this.props.cancelLabel}
-            </button>}
-          {this.props.extraButton}
-        </div>
+                type="button"
+                className="btn btn-default"
+                disabled={isSaving}
+                onClick={onCancel}
+                style={{marginLeft: 5}}>
+                {cancelLabel}
+              </button>}
+            {extraButton}
+          </div>}
       </form>
     );
   }
