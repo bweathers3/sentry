@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {Observer} from 'mobx-react';
+import _ from 'lodash';
 
-import FormModel from './model';
+import FormState from './state';
 import {t} from '../../locale';
 
 export default class Form extends React.Component {
@@ -17,9 +17,7 @@ export default class Form extends React.Component {
     footerClass: PropTypes.string,
     extraButton: PropTypes.element,
     initialData: PropTypes.object,
-    requireChanges: PropTypes.bool,
-    allowUndo: PropTypes.bool,
-    saveOnBlur: PropTypes.bool
+    requireChanges: PropTypes.bool
   };
 
   static defaultProps = {
@@ -28,52 +26,62 @@ export default class Form extends React.Component {
     submitDisabled: false,
     footerClass: 'form-actions align-right',
     className: 'form-stacked',
-    requireChanges: false,
-    allowUndo: false,
-    saveOnBlur: false
+    requireChanges: false
   };
 
   static childContextTypes = {
-    saveOnBlur: PropTypes.bool.isRequired,
     form: PropTypes.object.isRequired
   };
 
-  constructor(...args) {
-    super(...args);
-    this.model = new FormModel({
-      initialData: this.props.initialData
-    });
-
-    window.test = this.model;
+  constructor(props, context) {
+    super(props, context);
+    this.state = {
+      data: {...this.props.initialData},
+      errors: {},
+      initialData: {...this.props.initialData},
+      state: FormState.READY
+    };
   }
 
   getChildContext() {
+    let {data, errors} = this.state;
     return {
-      saveOnBlur: this.props.saveOnBlur,
-      form: this.model
+      form: {
+        data,
+        errors,
+        onFieldChange: this.onFieldChange
+      }
     };
   }
 
   onSubmit = e => {
     e.preventDefault();
-    if (this.model.isSaving) {
-      return;
-    }
-
-    this.props.onSubmit(this.model.getData(), this.onSubmitSuccess, this.onSubmitError);
+    this.props.onSubmit(this.state.data, this.onSubmitSuccess, this.onSubmitError);
   };
 
   onSubmitSuccess = data => {
-    this.model.submitSuccess(data);
+    let curData = this.state.data;
+    let newData = {};
+    Object.keys(data).forEach(k => {
+      if (curData.hasOwnProperty(k)) newData[k] = data[k];
+    });
+
+    this.setState({
+      state: FormState.READY,
+      errors: {},
+      initialData: newData
+    });
     this.props.onSubmitSuccess && this.props.onSubmitSuccess(data);
   };
 
   onSubmitError = error => {
-    this.model.submitError(error);
+    this.setState({
+      state: FormState.ERROR,
+      errors: error.responseJSON
+    });
     this.props.onSubmitError && this.props.onSubmitError(error);
   };
 
-  // XXX from merge
   onFieldChange = (name, value) => {
     this.setState(state => ({
       data: {
@@ -84,41 +92,28 @@ export default class Form extends React.Component {
   };
 
   render() {
-    let {isSaving} = this.model;
+    let isSaving = this.state.state === FormState.SAVING;
+    let {initialData, data} = this.state;
     let {requireChanges} = this.props;
+    let hasChanges = requireChanges
+      ? Object.keys(data).length && !_.isEqual(data, initialData)
+      : true;
     return (
       <form onSubmit={this.onSubmit} className={this.props.className}>
-        <Observer>
-          {() => {
-            return this.model.isError
-              ? <div className="alert alert-error alert-block">
-                  {t(
-                    'Unable to save your changes. Please ensure all fields are valid and try again.'
-                  )}
-                </div>
-              : null;
-          }}
-        </Observer>
-
-        {this.props.children}
-
-        <div className={this.props.footerClass} style={{marginTop: 25}}>
-          <Observer>
-            {() => (
-              <button
-                className="btn btn-primary"
-                disabled={
-                  this.model.isError ||
-                    isSaving ||
-                    this.props.submitDisabled ||
-                    (requireChanges ? !this.model.formChanged : false)
-                }
-                type="submit">
-                {this.props.submitLabel}
-              </button>
+        {this.state.state === FormState.ERROR &&
+          <div className="alert alert-error alert-block">
+            {t(
+              'Unable to save your changes. Please ensure all fields are valid and try again.'
             )}
-          </Observer>
-
+          </div>}
+        {this.props.children}
+        <div className={this.props.footerClass} style={{marginTop: 25}}>
+          <button
+            className="btn btn-primary"
+            disabled={isSaving || this.props.submitDisabled || !hasChanges}
+            type="submit">
+            {this.props.submitLabel}
+          </button>
           {this.props.onCancel &&
             <button
               type="button"
