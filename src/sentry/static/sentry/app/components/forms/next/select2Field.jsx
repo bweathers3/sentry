@@ -44,13 +44,17 @@ export default class Select2Field extends React.Component {
     }
   };
 
-  handleSelectMount = (ref) => {
+  handleSelectMount = (onChange, ref) => {
     if (ref) {
-      this.select = ref;
-      jQuery(this.select).select2(this.getSelect2Options()).on('change', this.onChange);
+      jQuery(ref)
+        .select2(this.getSelect2Options())
+        .on('change', this.onChange.bind(this, onChange));
+    } else {
+      jQuery(this.select).select2('destroy');
     }
-  }
 
+    this.select = ref;
+  };
 
   getSelect2Options() {
     return {
@@ -65,8 +69,8 @@ export default class Select2Field extends React.Component {
     return (
       <InputField
         {...this.props}
-        field={(onChange, ...props) => (
-          <select ref={this.handleSelectMount} {...props} onChange={this.onChange.bind(this, onChange)}>
+        field={({onChange, ...props}) => (
+          <select ref={ref => this.handleSelectMount(onChange, ref)} {...props}>
             {(this.props.choices || []).map(choice => {
               return (
                 <option key={choice[0]} value={choice[0]}>
