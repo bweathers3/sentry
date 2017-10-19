@@ -14,7 +14,7 @@ import OrganizationStore from '../../../../stores/organizationStore';
 import PanelBody from '../../../../components/forms/next/styled/panelBody';
 import PanelHeader from '../../../../components/forms/next/styled/panelHeader';
 import Select2Field from '../../../../components/forms/next/select2Field';
-import SettingsPanel from '../../../../components/forms/next/styled/settingsPanel';
+import Panel from '../../../../components/forms/next/styled/panel';
 import TextField from '../../../../components/forms/next/textField';
 import TextareaField from '../../../../components/forms/next/textareaField';
 
@@ -142,7 +142,7 @@ const OrganizationSettingsForm = React.createClass({
         initialData={initialData}
         onSubmit={this.onSubmit}>
         <Box>
-          <SettingsPanel>
+          <Panel>
             <PanelHeader>
               {t('General')}
             </PanelHeader>
@@ -171,9 +171,9 @@ const OrganizationSettingsForm = React.createClass({
                 required={false}
               />
             </PanelBody>
-          </SettingsPanel>
+          </Panel>
 
-          <SettingsPanel>
+          <Panel>
             <PanelHeader>
               {t('Membership')}
             </PanelHeader>
@@ -198,9 +198,9 @@ const OrganizationSettingsForm = React.createClass({
                 required={true}
               />
             </PanelBody>
-          </SettingsPanel>
+          </Panel>
 
-          <SettingsPanel>
+          <Panel>
             <PanelHeader>
               {t('Security & Privacy')}
             </PanelHeader>
@@ -275,7 +275,7 @@ const OrganizationSettingsForm = React.createClass({
                 required={false}
               />
             </PanelBody>
-          </SettingsPanel>
+          </Panel>
         </Box>
       </Form>
     );
