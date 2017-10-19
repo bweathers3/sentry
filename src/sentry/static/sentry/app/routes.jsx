@@ -32,8 +32,6 @@ import HookStore from './stores/hookStore';
 import MyIssuesAssignedToMe from './views/myIssues/assignedToMe';
 import MyIssuesBookmarked from './views/myIssues/bookmarked';
 import MyIssuesViewed from './views/myIssues/viewed';
-import NewOrganizationGeneralSettings from
-  './views/settings/organization/general/newOrganizationGeneralSettings';
 import NewProject from './views/projectInstall/newProject';
 import OnboardingConfigure from './views/onboarding/configure/index';
 import OnboardingWizard from './views/onboarding/index';
@@ -57,7 +55,8 @@ import OrganizationProjectsView
   from './views/settings/organization/projects/organizationProjectsView';
 import OrganizationRateLimits from './views/organizationRateLimits';
 import OrganizationRepositories from './views/organizationRepositories';
-import OrganizationSettings from './views/organizationSettings';
+import OrganizationGeneralSettingsView
+  from './views/settings/organization/general/organizationGeneralSettingsView';
 import OrganizationSettingsLayout
   from './views/settings/organization/organizationSettingsLayout';
 import OrganizationStats from './views/organizationStats';
@@ -118,6 +117,13 @@ const orgSettingsRoutes = [
     path="projects/"
     name="Projects"
     component={errorHandler(OrganizationProjectsView)}
+  />,
+
+  <Route
+    key="settings"
+    path="settings/"
+    name="General"
+    component={errorHandler(OrganizationGeneralSettingsView)}
   />,
 
   <Route
@@ -268,13 +274,17 @@ function routes() {
 
             <Route name="Organizations">
               <Route component={errorHandler(OrganizationSettingsLayout)}>
-                <IndexRoute component={errorHandler(OrganizationSettings)} />
+                <IndexRoute
+                  new
+                  component={errorHandler(OrganizationGeneralSettingsView)}
+                />
 
                 <Route
                   key="settings"
                   path="settings/"
                   name="General"
-                  component={errorHandler(NewOrganizationGeneralSettings)}
+                  new
+                  component={errorHandler(OrganizationGeneralSettingsView)}
                 />
 
                 {orgSettingsRoutes}
@@ -327,12 +337,6 @@ function routes() {
         <IndexRoute component={errorHandler(OrganizationDashboard)} />
 
         <Route path="/organizations/:orgId/" component={OrganizationHomeContainer}>
-          <Route
-            key="settings"
-            path="settings/"
-            name="General"
-            component={errorHandler(OrganizationSettings)}
-          />
 
           {orgSettingsRoutes}
         </Route>

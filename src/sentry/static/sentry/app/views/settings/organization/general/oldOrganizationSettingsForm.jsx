@@ -1,24 +1,17 @@
-import {Box} from 'grid-emotion';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import {extractMultilineFields} from '../../../../utils';
 import {t} from '../../../../locale';
 import ApiMixin from '../../../../mixins/apiMixin';
-import BooleanField from '../../../../components/forms/next/booleanField';
-import Form from '../../../../components/forms/next/form';
+import BooleanField from '../../../../components/forms/booleanField';
 import FormState from '../../../../components/forms/state';
 import IndicatorStore from '../../../../stores/indicatorStore';
-import LoadingIndicator from '../../../../components/loadingIndicator';
-import OrganizationStore from '../../../../stores/organizationStore';
-import PanelBody from '../../../../components/forms/next/styled/panelBody';
-import PanelHeader from '../../../../components/forms/next/styled/panelHeader';
-import Select2Field from '../../../../components/forms/next/select2Field';
-import Panel from '../../../../components/forms/next/styled/panel';
-import TextField from '../../../../components/forms/next/textField';
-import TextareaField from '../../../../components/forms/next/textareaField';
+import Select2Field from '../../../../components/forms/select2Field';
+import TextField from '../../../../components/forms/textField';
+import TextareaField from '../../../../components/forms/textareaField';
 
-const OrganizationSettingsForm = React.createClass({
+const OldOrganizationSettingsForm = React.createClass({
   propTypes: {
     orgId: PropTypes.string.isRequired,
     access: PropTypes.object.isRequired,
@@ -54,6 +47,17 @@ const OrganizationSettingsForm = React.createClass({
       result.defaultRole = data.defaultRole;
     }
     return result;
+  },
+
+  onFieldChange(name, value) {
+    let formData = {
+      ...this.state.formData,
+      [name]: value
+    };
+    this.setState({
+      hasChanges: true,
+      formData
+    });
   },
 
   onSubmit(e) {
@@ -106,8 +110,9 @@ const OrganizationSettingsForm = React.createClass({
   },
 
   render() {
+    let isSaving = this.state.state === FormState.SAVING;
     let {errors, formData} = this.state;
-    let {access, initialData, orgId} = this.props;
+    let {access, initialData} = this.props;
 
     let sensitiveFieldsHelp = (
       <span>
@@ -134,80 +139,81 @@ const OrganizationSettingsForm = React.createClass({
     );
 
     return (
-      <Form
-        apiMethod="PUT"
-        apiEndpoint={`/organizations/${orgId}/`}
-        saveOnBlur
-        allowUndo
-        initialData={initialData}
-        onSubmit={this.onSubmit}>
-        <Box>
-          <Panel>
-            <PanelHeader>
-              {t('General')}
-            </PanelHeader>
-
-            <PanelBody>
+      <div className="box">
+        <div className="box-content with-padding">
+          <form
+            onSubmit={this.onSubmit}
+            className="form-stacked ref-organization-settings">
+            {this.state.state === FormState.ERROR &&
+              <div className="alert alert-error alert-block">
+                {t(
+                  'Unable to save your changes. Please ensure all fields are valid and try again.'
+                )}
+              </div>}
+            <fieldset>
+              <legend style={{marginTop: 0}}>{t('General')}</legend>
 
               <TextField
+                key="name"
                 name="name"
                 label={t('Name')}
                 help={t('The name of your organization. i.e. My Company')}
                 value={formData.name}
                 required={true}
+                error={errors.name}
+                onChange={this.onFieldChange.bind(this, 'name')}
               />
               <TextField
+                key="slug"
                 name="slug"
                 label={t('Short name')}
                 value={formData.slug}
                 help={t('A unique ID used to identify this organization.')}
                 required={true}
+                error={errors.slug}
+                onChange={this.onFieldChange.bind(this, 'slug')}
               />
               <BooleanField
+                key="isEarlyAdopter"
                 name="isEarlyAdopter"
                 label={t('Early Adopter')}
                 value={formData.isEarlyAdopter}
                 help={t("Opt-in to new features before they're released to the public.")}
                 required={false}
+                error={errors.isEarlyAdopter}
+                onChange={this.onFieldChange.bind(this, 'isEarlyAdopter')}
               />
-            </PanelBody>
-          </Panel>
 
-          <Panel>
-            <PanelHeader>
-              {t('Membership')}
-            </PanelHeader>
-
-            <PanelBody>
+              <legend>{t('Membership')}</legend>
 
               {access.has('org:admin') &&
                 <Select2Field
+                  key="defaultRole"
                   name="defaultRole"
                   label={t('Default Role')}
                   choices={initialData.availableRoles.map(r => [r.id, r.name])}
                   value={formData.defaultRole}
                   help={t('The default role new members will receive.')}
                   required={true}
+                  error={errors.defaultRole}
+                  onChange={this.onFieldChange.bind(this, 'defaultRole')}
                 />}
 
               <BooleanField
+                key="openMembership"
                 name="openMembership"
                 label={t('Open Membership')}
                 value={formData.openMembership}
                 help={t('Allow organization members to freely join or leave any team.')}
                 required={true}
+                error={errors.openMembership}
+                onChange={this.onFieldChange.bind(this, 'openMembership')}
               />
-            </PanelBody>
-          </Panel>
 
-          <Panel>
-            <PanelHeader>
-              {t('Security & Privacy')}
-            </PanelHeader>
-
-            <PanelBody>
+              <legend>{t('Security & Privacy')}</legend>
 
               <BooleanField
+                key="allowSharedIssues"
                 name="allowSharedIssues"
                 label={t('Allow Shared Issues')}
                 value={formData.allowSharedIssues}
@@ -215,9 +221,12 @@ const OrganizationSettingsForm = React.createClass({
                   'Enable sharing of limited details on issues to anonymous users.'
                 )}
                 required={false}
+                error={errors.allowSharedIssues}
+                onChange={this.onFieldChange.bind(this, 'allowSharedIssues')}
               />
 
               <BooleanField
+                key="enhancedPrivacy"
                 name="enhancedPrivacy"
                 label={t('Enhanced Privacy')}
                 value={formData.enhancedPrivacy}
@@ -225,9 +234,12 @@ const OrganizationSettingsForm = React.createClass({
                   'Enable enhanced privacy controls to limit personally identifiable information (PII) as well as source code in things like notifications.'
                 )}
                 required={false}
+                error={errors.enhancedPrivacy}
+                onChange={this.onFieldChange.bind(this, 'enhancedPrivacy')}
               />
 
               <BooleanField
+                key="dataScrubber"
                 name="dataScrubber"
                 label={t('Require Data Scrubber')}
                 value={formData.dataScrubber}
@@ -235,9 +247,12 @@ const OrganizationSettingsForm = React.createClass({
                   'Require server-side data scrubbing be enabled for all projects.'
                 )}
                 required={false}
+                error={errors.dataScrubber}
+                onChange={this.onFieldChange.bind(this, 'dataScrubber')}
               />
 
               <BooleanField
+                key="dataScrubberDefaults"
                 name="dataScrubberDefaults"
                 label={t('Require Using Default Scrubbers')}
                 value={formData.dataScrubberDefaults}
@@ -245,27 +260,36 @@ const OrganizationSettingsForm = React.createClass({
                   'Require the default scrubbers be applied to prevent things like passwords and credit cards from being stored for all projects.'
                 )}
                 required={true}
+                error={errors.dataScrubberDefaults}
+                onChange={this.onFieldChange.bind(this, 'dataScrubberDefaults')}
               />
 
               <TextareaField
+                key="sensitiveFields"
                 name="sensitiveFields"
                 label={t('Global sensitive fields')}
                 value={formData.sensitiveFields}
                 help={sensitiveFieldsHelp}
                 placeholder={t('e.g. email')}
                 required={false}
+                error={errors.sensitiveFields}
+                onChange={this.onFieldChange.bind(this, 'sensitiveFields')}
               />
 
               <TextareaField
+                key="safeFields"
                 name="safeFields"
                 label={t('Global safe fields')}
                 value={formData.safeFields}
                 help={safeFieldsHelp}
                 placeholder={t('e.g. email')}
                 required={false}
+                error={errors.safeFields}
+                onChange={this.onFieldChange.bind(this, 'safeFields')}
               />
 
               <BooleanField
+                key="scrubIPAddresses"
                 name="scrubIPAddresses"
                 label={t('Prevent Storing of IP Addresses')}
                 value={formData.scrubIPAddresses}
@@ -273,99 +297,23 @@ const OrganizationSettingsForm = React.createClass({
                   'Preventing IP addresses from being stored for new events on all projects.'
                 )}
                 required={false}
+                error={errors.scrubIPAddresses}
+                onChange={this.onFieldChange.bind(this, 'scrubIPAddresses')}
               />
-            </PanelBody>
-          </Panel>
-        </Box>
-      </Form>
-    );
-  }
-});
-
-const NewOrganizationGeneralSettings = React.createClass({
-  mixins: [ApiMixin],
-
-  getInitialState() {
-    return {
-      loading: true,
-      error: false,
-      data: null
-    };
-  },
-
-  componentWillMount() {
-    this.fetchData();
-  },
-
-  fetchData() {
-    this.api.request(`/organizations/${this.props.params.orgId}/`, {
-      method: 'GET',
-      success: data => {
-        this.setState({
-          data,
-          loading: false
-        });
-      },
-      error: () => {
-        this.setState({
-          loading: false,
-          error: true
-        });
-      }
-    });
-  },
-
-  onSave(data) {
-    // TODO(dcramer): this should propagate
-    this.setState({data});
-    OrganizationStore.add(data);
-  },
-
-  render() {
-    let data = this.state.data;
-    let orgId = this.props.params.orgId;
-    let access = data && new Set(data.access);
-
-    return (
-      <div>
-        {this.state.loading && <LoadingIndicator />}
-
-        {!this.state.loading &&
-          <div>
-            <h3>{t('Organization Settings')}</h3>
-            <OrganizationSettingsForm
-              initialData={data}
-              orgId={orgId}
-              access={access}
-              onSave={this.onSave}
-            />
-
-            {access.has('org:admin') &&
-              !data.isDefault &&
-              <div className="box">
-                <div className="box-header">
-                  <h3>{t('Remove Organization')}</h3>
-                </div>
-                <div className="box-content with-padding">
-                  <p>
-                    {t(
-                      'Removing this organization will delete all data including projects and their associated events.'
-                    )}
-                  </p>
-
-                  <fieldset className="form-actions">
-                    <a
-                      href={`/organizations/${orgId}/remove/`}
-                      className="btn btn-danger">
-                      {t('Remove Organization')}
-                    </a>
-                  </fieldset>
-                </div>
-              </div>}
-          </div>}
+            </fieldset>
+            <fieldset className="form-actions">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSaving || !this.state.hasChanges}>
+                {t('Save Changes')}
+              </button>
+            </fieldset>
+          </form>
+        </div>
       </div>
     );
   }
 });
 
-export default NewOrganizationGeneralSettings;
+export default OldOrganizationSettingsForm;
